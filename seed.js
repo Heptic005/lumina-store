@@ -98,6 +98,38 @@ const products = [
             "Compatibility": "Lumina X1 Pro",
             "Features": "MagSafe Compatible"
         }
+    },
+    {
+        name: "Lumina X1",
+        price: 10999000,
+        image: "https://images.unsplash.com/photo-1598327773204-3c917297a24e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        category: "Flagship",
+        description: "Performa flagship dalam ukuran yang lebih compact.",
+        stock: 40,
+        specs: {
+            "Processor": "Lumina A18",
+            "RAM": "8GB LPDDR5X",
+            "Storage": "128GB / 256GB",
+            "Camera": "50MP Main + 12MP Ultra-wide",
+            "Battery": "4000mAh",
+            "Display": "6.1 inch OLED 120Hz"
+        }
+    },
+    {
+        name: "Lumina Air 5 Pro",
+        price: 9999000,
+        image: "https://images.unsplash.com/photo-1616348436168-de43ad0db179?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        category: "Mid-Range",
+        description: "Versi Pro dari seri Air dengan kamera yang lebih canggih.",
+        stock: 80,
+        specs: {
+            "Processor": "Lumina A17 Pro",
+            "RAM": "12GB",
+            "Storage": "256GB",
+            "Camera": "108MP Main",
+            "Battery": "5000mAh",
+            "Display": "6.7 inch OLED 120Hz"
+        }
     }
 ];
 

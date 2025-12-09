@@ -198,19 +198,53 @@ const ProductDetail = () => {
                 )}
             </div>
 
-            {/* Related Products */}
+            {/* Similar Products */}
             {relatedProducts.length > 0 && (
                 <div>
-                    <h2 className="text-2xl font-bold text-primary mb-8">Produk Terkait</h2>
+                    <h2 className="text-2xl font-bold text-primary mb-8">Similar Products</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         {relatedProducts.map((related) => (
-                            <Link key={related.id} to={`/products/${related.id}`} className="bg-surface rounded-xl border border-white/5 overflow-hidden hover:shadow-lg hover:shadow-accent/5 transition-all group block">
-                                <div className="aspect-square bg-background relative overflow-hidden">
-                                    <img src={related.image} alt={related.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 opacity-80 group-hover:opacity-100" />
+                            <Link key={related.id} to={`/products/${related.id}`} className="group bg-surface rounded-2xl border border-white/5 overflow-hidden hover:shadow-xl hover:shadow-accent/5 transition-all duration-300 hover:-translate-y-1">
+                                <div className="relative aspect-[4/3] bg-background p-6 flex items-center justify-center">
+                                    <div className="absolute top-3 left-3 bg-red-500/10 text-red-500 text-xs font-bold px-2 py-1 rounded-md">
+                                        -12%
+                                    </div>
+                                    <img
+                                        src={related.image}
+                                        alt={related.name}
+                                        className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
+                                    />
+                                    <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity translate-x-2 group-hover:translate-x-0 duration-300">
+                                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                        <div className="w-2 h-2 rounded-full bg-zinc-500"></div>
+                                        <div className="w-2 h-2 rounded-full bg-white"></div>
+                                    </div>
                                 </div>
-                                <div className="p-4">
-                                    <h3 className="font-bold text-primary mb-1 truncate group-hover:text-accent transition-colors">{related.name}</h3>
-                                    <p className="text-accent font-semibold">Rp {related.price.toLocaleString('id-ID')}</p>
+                                <div className="p-5">
+                                    <h3 className="font-bold text-primary mb-1 truncate">{related.name}</h3>
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className="flex text-yellow-500">
+                                            {[...Array(5)].map((_, i) => (
+                                                <Star key={i} className="w-3 h-3 fill-current" />
+                                            ))}
+                                        </div>
+                                        <span className="text-xs text-secondary">4.9</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <span className="text-xs text-secondary line-through block">Rp {(related.price * 1.12).toLocaleString('id-ID')}</span>
+                                            <span className="text-lg font-bold text-accent">Rp {related.price.toLocaleString('id-ID')}</span>
+                                        </div>
+                                        <button
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                addToCart(related);
+                                            }}
+                                            className="p-2 rounded-lg bg-accent/10 text-accent hover:bg-accent hover:text-background transition-colors"
+                                        >
+                                            <ShoppingCart className="w-5 h-5" />
+                                        </button>
+                                    </div>
                                 </div>
                             </Link>
                         ))}
