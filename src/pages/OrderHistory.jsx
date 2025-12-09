@@ -79,7 +79,7 @@ const OrderHistory = () => {
                                     {order.items && order.items.map((item, index) => (
                                         <div key={index} className="flex gap-4 items-center">
                                             <div className="w-16 h-16 bg-background rounded-lg overflow-hidden border border-white/5 flex-shrink-0">
-                                                <img src={item.image || "https://via.placeholder.com/150"} alt={item.product_name} className="w-full h-full object-cover opacity-80" />
+                                                <img src={item.product?.image || item.image || "https://via.placeholder.com/150"} alt={item.product_name} className="w-full h-full object-cover opacity-80" />
                                             </div>
                                             <div className="flex-grow">
                                                 <h4 className="font-bold text-primary text-sm">{item.product_name}</h4>

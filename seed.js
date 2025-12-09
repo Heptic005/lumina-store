@@ -25,7 +25,19 @@ const products = [
             "Storage": "256GB / 512GB",
             "Camera": "200MP Main + 50MP Ultra-wide",
             "Battery": "5000mAh",
-            "Display": "6.8 inch OLED 120Hz"
+            "Display": "6.8 inch OLED 120Hz",
+            "variants": {
+                "Color": [
+                    { "name": "Phantom Black", "hex": "#1a1a1a" },
+                    { "name": "Titanium Silver", "hex": "#c0c0c0" },
+                    { "name": "Deep Purple", "hex": "#4b0082" }
+                ],
+                "Storage": [
+                    { "name": "256GB", "price_modifier": 0 },
+                    { "name": "512GB", "price_modifier": 2000000 },
+                    { "name": "1TB", "price_modifier": 4500000 }
+                ]
+            }
         }
     },
     {

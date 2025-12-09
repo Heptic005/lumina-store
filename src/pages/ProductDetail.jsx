@@ -14,6 +14,11 @@ const ProductDetail = () => {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('description');
 
+    // New State for Variants & Quantity
+    const [selectedVariants, setSelectedVariants] = useState({});
+    const [quantity, setQuantity] = useState(1);
+    const [currentPrice, setCurrentPrice] = useState(0);
+
     useEffect(() => {
         const fetchProductAndRelated = async () => {
             setLoading(true);
@@ -31,6 +36,18 @@ const ProductDetail = () => {
             }
 
             setProduct(currentProduct);
+            setCurrentPrice(currentProduct.price);
+
+            // Initialize default variants if they exist
+            if (currentProduct.specs?.variants) {
+                const defaults = {};
+                Object.entries(currentProduct.specs.variants).forEach(([key, options]) => {
+                    if (options && options.length > 0) {
+                        defaults[key] = options[0];
+                    }
+                });
+                setSelectedVariants(defaults);
+            }
 
             // 2. Fetch related products (same category, exclude current)
             if (currentProduct) {
@@ -53,6 +70,18 @@ const ProductDetail = () => {
         }
     }, [id]);
 
+    const handleVariantChange = (type, option) => {
+        setSelectedVariants(prev => ({
+            ...prev,
+            [type]: option
+        }));
+
+        // Update price if storage changes
+        if (type === 'Storage' && option.price_modifier !== undefined) {
+            setCurrentPrice(product.price + option.price_modifier);
+        }
+    };
+
     if (loading) {
         return <div className="text-center py-20">Loading...</div>;
     }
@@ -62,7 +91,12 @@ const ProductDetail = () => {
     }
 
     const handleAddToCart = () => {
-        addToCart(product);
+        addToCart({
+            ...product,
+            price: currentPrice,
+            selectedVariants,
+            quantity
+        });
         setIsAdded(true);
         setTimeout(() => setIsAdded(false), 2000);
     };
@@ -96,7 +130,7 @@ const ProductDetail = () => {
                         <h1 className="text-4xl font-bold text-primary mt-2 mb-4">{product.name}</h1>
                         <div className="flex items-center gap-4 mb-6">
                             <div className="text-3xl font-bold text-primary">
-                                Rp {product.price.toLocaleString('id-ID')}
+                                Rp {currentPrice.toLocaleString('id-ID')}
                             </div>
                             <div className="flex items-center gap-1 text-amber-400 bg-amber-500/10 px-2 py-1 rounded-lg border border-amber-500/20">
                                 <Star className="w-4 h-4 fill-current" />
@@ -110,8 +144,76 @@ const ProductDetail = () => {
                         {product.description}
                     </p>
 
+                    {/* Variants Selection */}
+                    {product.specs?.variants && (
+                        <div className="space-y-6 mb-8">
+                            {/* Color Selection */}
+                            {product.specs.variants.Color && (
+                                <div>
+                                    <h3 className="text-sm font-medium text-secondary mb-3">Color</h3>
+                                    <div className="flex gap-3">
+                                        {product.specs.variants.Color.map((color) => (
+                                            <button
+                                                key={color.name}
+                                                onClick={() => handleVariantChange('Color', color)}
+                                                className={`group relative w-12 h-12 rounded-full flex items-center justify-center transition-all ${selectedVariants.Color?.name === color.name ? 'ring-2 ring-accent ring-offset-2 ring-offset-background' : 'hover:ring-2 hover:ring-white/20'}`}
+                                                title={color.name}
+                                            >
+                                                <span
+                                                    className="w-full h-full rounded-full border border-white/10"
+                                                    style={{ backgroundColor: color.hex }}
+                                                ></span>
+                                                {selectedVariants.Color?.name === color.name && (
+                                                    <Check className={`w-5 h-5 absolute inset-0 m-auto ${['#ffffff', '#c0c0c0'].includes(color.hex) ? 'text-black' : 'text-white'}`} />
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <p className="text-sm text-secondary mt-2">Selected: <span className="text-primary font-medium">{selectedVariants.Color?.name}</span></p>
+                                </div>
+                            )}
+
+                            {/* Storage Selection */}
+                            {product.specs.variants.Storage && (
+                                <div>
+                                    <h3 className="text-sm font-medium text-secondary mb-3">Storage</h3>
+                                    <div className="flex flex-wrap gap-3">
+                                        {product.specs.variants.Storage.map((storage) => (
+                                            <button
+                                                key={storage.name}
+                                                onClick={() => handleVariantChange('Storage', storage)}
+                                                className={`px-6 py-3 rounded-xl border font-medium transition-all ${selectedVariants.Storage?.name === storage.name
+                                                    ? 'border-accent bg-accent/10 text-accent'
+                                                    : 'border-white/10 bg-surface text-secondary hover:border-white/30 hover:text-primary'}`}
+                                            >
+                                                {storage.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {/* Actions */}
-                    <div className="flex gap-4 mb-8">
+                    <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                        {/* Quantity Selector */}
+                        <div className="flex items-center bg-surface border border-white/10 rounded-xl">
+                            <button
+                                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                className="w-12 h-full flex items-center justify-center text-secondary hover:text-primary transition-colors"
+                            >
+                                -
+                            </button>
+                            <span className="w-12 text-center font-bold text-primary">{quantity}</span>
+                            <button
+                                onClick={() => setQuantity(quantity + 1)}
+                                className="w-12 h-full flex items-center justify-center text-secondary hover:text-primary transition-colors"
+                            >
+                                +
+                            </button>
+                        </div>
+
                         <button
                             onClick={handleAddToCart}
                             className={`flex-1 py-4 px-6 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all ${isAdded
@@ -182,12 +284,14 @@ const ProductDetail = () => {
                     <div className="bg-surface rounded-2xl p-8 border border-white/5">
                         {product.specs ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12">
-                                {Object.entries(product.specs).map(([key, value]) => (
-                                    <div key={key} className="flex flex-col border-b border-white/5 pb-4 last:border-0">
-                                        <span className="text-sm text-secondary uppercase font-semibold tracking-wider mb-1">{key}</span>
-                                        <span className="text-primary font-medium text-lg">{value}</span>
-                                    </div>
-                                ))}
+                                {Object.entries(product.specs)
+                                    .filter(([key]) => key !== 'variants')
+                                    .map(([key, value]) => (
+                                        <div key={key} className="flex flex-col border-b border-white/5 pb-4 last:border-0">
+                                            <span className="text-sm text-secondary uppercase font-semibold tracking-wider mb-1">{key}</span>
+                                            <span className="text-primary font-medium text-lg">{value}</span>
+                                        </div>
+                                    ))}
                             </div>
                         ) : (
                             <div className="text-center text-secondary py-8">

@@ -17,7 +17,10 @@ export const OrderProvider = ({ children }) => {
                     .from('orders')
                     .select(`
             *,
-            items:order_items(*)
+            items:order_items(
+                *,
+                product:products(image)
+            )
           `)
                     .eq('user_id', user.id)
                     .order('created_at', { ascending: false });
@@ -58,8 +61,7 @@ export const OrderProvider = ({ children }) => {
                 product_id: item.id,
                 product_name: item.name,
                 quantity: item.quantity,
-                price: item.price,
-                image: item.image
+                price: item.price
             }));
 
             const { error: itemsError } = await supabase
@@ -69,9 +71,15 @@ export const OrderProvider = ({ children }) => {
             if (itemsError) throw itemsError;
 
             // 3. Update local state
+            // We need to match the structure of the fetched data (with product relation)
+            const itemsForState = orderData.items.map((item, index) => ({
+                ...itemsToInsert[index],
+                product: { image: item.image }
+            }));
+
             const newOrder = {
                 ...order,
-                items: itemsToInsert
+                items: itemsForState
             };
 
             setOrders(prev => [newOrder, ...prev]);
