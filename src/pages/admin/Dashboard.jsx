@@ -181,7 +181,7 @@ const Dashboard = () => {
                 {/* Sales Chart */}
                 <div className="bg-surface rounded-2xl p-6 border border-white/5">
                     <h3 className="text-lg font-bold text-primary mb-6">Sales Analytics (7 Days)</h3>
-                    <div className="h-80">
+                    <div className="h-80 min-w-0">
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={salesData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                 <defs>
@@ -208,7 +208,7 @@ const Dashboard = () => {
                 {/* Best Selling Products Chart - NEW */}
                 <div className="bg-surface rounded-2xl p-6 border border-white/5">
                     <h3 className="text-lg font-bold text-primary mb-6">Top Products</h3>
-                    <div className="h-80">
+                    <div className="h-80 min-w-0">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={topProducts} layout="vertical" margin={{ top: 0, right: 30, left: 20, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" horizontal={true} vertical={false} />

@@ -89,7 +89,7 @@ const Navbar = () => {
                     <div className="flex justify-between h-20 items-center gap-8">
                         {/* Logo */}
                         <Link to="/" className="flex items-center gap-3 group flex-shrink-0">
-                            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Lumina Logo" className="w-10 h-10 object-contain group-hover:scale-110 transition-transform duration-300" />
+                            <img src="/lumina-store/logo.png" alt="Lumina Logo" className="w-10 h-10 object-contain group-hover:scale-110 transition-transform duration-300" />
                             <span className="text-2xl font-bold text-primary tracking-tight">
                                 Lumina
                             </span>

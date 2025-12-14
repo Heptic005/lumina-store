@@ -413,7 +413,7 @@ const Products = () => {
                                                             <h3 className="text-3xl font-bold text-white mb-4">Get 40% Off</h3>
                                                             <button className="bg-white/10 backdrop-blur-md text-white px-6 py-2 rounded-xl font-bold hover:bg-white/20 transition-colors border border-white/10">Shop Now</button>
                                                         </div>
-                                                        <img src={`${import.meta.env.BASE_URL}lumina-gx.jpg`} alt="Promo" className="absolute right-4 top-1/2 -translate-y-1/2 h-40 w-auto object-contain rounded-2xl shadow-lg border border-white/10 drop-shadow-2xl group-hover:scale-105 transition-transform duration-500" />
+                                                        <img src="/lumina-store/lumina-gx.jpg" alt="Promo" className="absolute right-4 top-1/2 -translate-y-1/2 h-40 w-auto object-contain rounded-2xl shadow-lg border border-white/10 drop-shadow-2xl group-hover:scale-105 transition-transform duration-500" />
                                                     </div>
                                                     <div className="bg-gradient-to-br from-slate-900 to-gray-800 rounded-3xl p-8 relative overflow-hidden flex items-center border border-white/5 group">
                                                         <div className="relative z-10 max-w-[60%]">
@@ -421,7 +421,7 @@ const Products = () => {
                                                             <h3 className="text-3xl font-bold text-white mb-4">New Arrivals</h3>
                                                             <button className="bg-accent text-background px-6 py-2 rounded-xl font-bold hover:bg-accent/90 transition-colors">Explore</button>
                                                         </div>
-                                                        <img src={`${import.meta.env.BASE_URL}lumina-controller.jpg`} alt="Promo" className="absolute right-4 top-1/2 -translate-y-1/2 h-40 w-auto object-contain rounded-2xl shadow-lg border border-white/10 drop-shadow-2xl group-hover:scale-105 transition-transform duration-500" />
+                                                        <img src="/lumina-store/lumina-controller.jpg" alt="Promo" className="absolute right-4 top-1/2 -translate-y-1/2 h-40 w-auto object-contain rounded-2xl shadow-lg border border-white/10 drop-shadow-2xl group-hover:scale-105 transition-transform duration-500" />
                                                     </div>
                                                 </div>
                                             </ScrollReveal>
