@@ -76,7 +76,7 @@ function AnimatedRoutes() {
 
 function App() {
   return (
-    <Router basename={import.meta.env.BASE_URL}>
+    <Router basename="/lumina-store">
       <ScrollToTop />
       <AuthProvider>
         <ToastProvider>
