@@ -85,8 +85,8 @@ const Cart = () => {
                 <div className="lg:w-2/3 space-y-6">
                     {cart.map(item => (
                         <div key={item.id} className="flex flex-col sm:flex-row gap-6 p-6 bg-surface rounded-2xl border border-white/5 shadow-sm hover:border-white/10 transition-colors group">
-                            <div className="w-full sm:w-32 h-32 bg-background rounded-xl overflow-hidden flex-shrink-0 border border-white/5 p-4">
-                                <img src={item.image} alt={item.name} className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" />
+                            <div className="w-full sm:w-32 h-32 bg-background rounded-xl overflow-hidden flex-shrink-0 border border-white/5">
+                                <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                             </div>
                             <div className="flex-grow flex flex-col justify-between">
                                 <div className="flex justify-between items-start">
@@ -192,11 +192,11 @@ const Cart = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         {recommendedProducts.map((product) => (
                             <Link key={product.id} to={`/products/${product.id}`} className="group bg-surface rounded-2xl border border-white/5 overflow-hidden hover:shadow-xl hover:shadow-accent/5 transition-all duration-300 hover:-translate-y-1">
-                                <div className="relative aspect-[4/3] bg-background p-6 flex items-center justify-center">
+                                <div className="relative aspect-square bg-background p-6 flex items-center justify-center">
                                     <img
                                         src={product.image}
                                         alt={product.name}
-                                        className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
+                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 rounded-xl"
                                     />
                                 </div>
                                 <div className="p-5">

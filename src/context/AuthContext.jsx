@@ -51,8 +51,42 @@ export const AuthProvider = ({ children }) => {
         if (error) throw error;
     };
 
+    const updateProfile = async (data) => {
+        const { data: { user }, error } = await supabase.auth.updateUser({
+            data: data
+        });
+
+        if (error) throw error;
+        setUser(user);
+        return user;
+    };
+
+    const toggleWishlist = async (product) => {
+        if (!user) return;
+
+        const currentWishlist = user.user_metadata?.wishlist || [];
+        const isInWishlist = currentWishlist.some(item => item.id === product.id);
+
+        let newWishlist;
+        if (isInWishlist) {
+            newWishlist = currentWishlist.filter(item => item.id !== product.id);
+        } else {
+            // Store minimal product data
+            newWishlist = [...currentWishlist, {
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                image: product.image,
+                category: product.category
+            }];
+        }
+
+        await updateProfile({ wishlist: newWishlist });
+        return !isInWishlist;
+    };
+
     return (
-        <AuthContext.Provider value={{ user, login, signUp, logout, loading }}>
+        <AuthContext.Provider value={{ user, login, signUp, logout, updateProfile, toggleWishlist, loading }}>
             {!loading && children}
         </AuthContext.Provider>
     );

@@ -1,38 +1,10 @@
 import { Calendar, User, ArrowRight } from 'lucide-react';
-
-const blogPosts = [
-    {
-        id: 1,
-        title: "Mengenal Teknologi Kamera AI pada Lumina X1",
-        excerpt: "Pelajari bagaimana kecerdasan buatan meningkatkan kualitas fotografi Anda ke level profesional dengan fitur-fitur terbaru dari Lumina X1.",
-        date: "24 Nov 2025",
-        author: "Tekno Reviewer",
-        image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        category: "Teknologi"
-    },
-    {
-        id: 2,
-        title: "Tips Menghemat Baterai Smartphone Seharian",
-        excerpt: "Simak tips dan trik ampuh untuk memaksimalkan daya tahan baterai smartphone Anda agar tetap aktif sepanjang hari tanpa perlu sering mengisi daya.",
-        date: "20 Nov 2025",
-        author: "Lumina Team",
-        image: "https://images.unsplash.com/photo-1523206489230-c012c64b2b48?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        category: "Tips & Trik"
-    },
-    {
-        id: 3,
-        title: "Evolusi Desain Smartphone: Dari Masa ke Masa",
-        excerpt: "Menelusuri perjalanan desain smartphone dari bentuk yang tebal hingga menjadi perangkat tipis dan elegan seperti yang kita kenal sekarang.",
-        date: "15 Nov 2025",
-        author: "Design Lead",
-        image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-        category: "Desain"
-    }
-];
+import { Link } from 'react-router-dom';
+import { blogPosts } from '../data/blogPosts';
 
 const Blog = () => {
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-background min-h-screen">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-background min-h-screen pt-24">
             <div className="text-center mb-16">
                 <h1 className="text-4xl font-bold text-primary mb-4">Lumina Blog</h1>
                 <p className="text-secondary max-w-2xl mx-auto text-lg">
@@ -42,7 +14,7 @@ const Blog = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {blogPosts.map((post) => (
-                    <article key={post.id} className="bg-surface rounded-2xl border border-white/5 overflow-hidden hover:shadow-lg hover:shadow-accent/5 transition-all flex flex-col h-full group">
+                    <Link to={`/blog/${post.id}`} key={post.id} className="bg-surface rounded-2xl border border-white/5 overflow-hidden hover:shadow-lg hover:shadow-accent/5 transition-all flex flex-col h-full group">
                         <div className="h-48 overflow-hidden relative">
                             <img
                                 src={post.image}
@@ -64,7 +36,7 @@ const Blog = () => {
                                 </span>
                             </div>
 
-                            <h2 className="text-xl font-bold text-primary mb-3 line-clamp-2 group-hover:text-accent transition-colors cursor-pointer">
+                            <h2 className="text-xl font-bold text-primary mb-3 line-clamp-2 group-hover:text-accent transition-colors">
                                 {post.title}
                             </h2>
 
@@ -72,11 +44,11 @@ const Blog = () => {
                                 {post.excerpt}
                             </p>
 
-                            <button className="text-accent font-semibold text-sm flex items-center gap-1 hover:gap-2 transition-all mt-auto">
+                            <div className="text-accent font-semibold text-sm flex items-center gap-1 group-hover:gap-2 transition-all mt-auto">
                                 Baca Selengkapnya <ArrowRight className="w-4 h-4" />
-                            </button>
+                            </div>
                         </div>
-                    </article>
+                    </Link>
                 ))}
             </div>
 
@@ -90,3 +62,4 @@ const Blog = () => {
 };
 
 export default Blog;
+

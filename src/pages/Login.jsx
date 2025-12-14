@@ -18,8 +18,12 @@ const Login = () => {
         setError(null);
         try {
             if (isLogin) {
-                await login(email, password);
-                navigate('/');
+                const { user } = await login(email, password);
+                if (user?.user_metadata?.role === 'admin') {
+                    navigate('/admin');
+                } else {
+                    navigate('/');
+                }
             } else {
                 await signUp(email, password);
                 // Supabase might require email confirmation, but for now let's assume auto-login or message

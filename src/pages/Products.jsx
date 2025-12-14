@@ -1,11 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { Link } from 'react-router-dom';
-import { Filter, ShoppingCart, ChevronDown, ChevronRight, Star, Smartphone, Laptop, Tablet, Headphones, Watch, Camera, Gamepad, Wifi, Sun, Grid, List } from 'lucide-react';
+import { Filter, ShoppingCart, ChevronDown, ChevronRight, Star, Smartphone, Laptop, Tablet, Headphones, Watch, Camera, Gamepad, Wifi, Sun, Grid, List, Heart } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabaseClient';
+import ScrollReveal from '../components/ScrollReveal';
 
 const Products = () => {
     const { addToCart } = useCart();
+    const { user, toggleWishlist } = useAuth();
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedCategory, setSelectedCategory] = useState('All');
@@ -13,6 +16,7 @@ const Products = () => {
     const [selectedFilters, setSelectedFilters] = useState({});
     const [sortBy, setSortBy] = useState('featured');
     const [isSortOpen, setIsSortOpen] = useState(false);
+    const [animatingHeart, setAnimatingHeart] = useState(null);
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -26,12 +30,30 @@ const Products = () => {
                 }
             }
 
-            const { data, error } = await query;
+            const { data: productsData, error } = await query;
 
             if (error) {
                 console.error('Error fetching products:', error);
             } else {
-                setProducts(data || []);
+                // Fetch Ratings
+                const { data: reviewsData } = await supabase
+                    .from('reviews')
+                    .select('product_id, rating');
+
+                const productsWithRatings = productsData?.map(p => {
+                    const productReviews = reviewsData?.filter(r => r.product_id === p.id) || [];
+                    const avgRating = productReviews.length > 0
+                        ? productReviews.reduce((sum, r) => sum + r.rating, 0) / productReviews.length
+                        : 0;
+
+                    return {
+                        ...p,
+                        rating: avgRating,
+                        reviewCount: productReviews.length
+                    };
+                });
+
+                setProducts(productsWithRatings || []);
             }
             setLoading(false);
         };
@@ -325,75 +347,86 @@ const Products = () => {
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {filteredProducts.map((product, idx) => (
-                                    <>
-                                        <Link key={product.id} to={`/products/${product.id}`} className="group bg-surface rounded-2xl border border-white/5 overflow-hidden hover:shadow-xl hover:shadow-accent/5 transition-all duration-300 hover:-translate-y-1">
-                                            <div className="relative aspect-[4/3] bg-background p-6 flex items-center justify-center">
-                                                <div className="absolute top-3 left-3 bg-red-500/10 text-red-500 text-xs font-bold px-2 py-1 rounded-md">
-                                                    -12%
-                                                </div>
-                                                <img
-                                                    src={product.image}
-                                                    alt={product.name}
-                                                    className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
-                                                />
-                                                <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity translate-x-2 group-hover:translate-x-0 duration-300">
-                                                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                                                    <div className="w-2 h-2 rounded-full bg-zinc-500"></div>
-                                                    <div className="w-2 h-2 rounded-full bg-white"></div>
-                                                </div>
-                                            </div>
-                                            <div className="p-5">
-                                                <h3 className="font-bold text-primary mb-1 truncate">{product.name}</h3>
-                                                <div className="flex items-center gap-2 mb-3">
-                                                    <div className="flex text-yellow-500">
-                                                        {[...Array(5)].map((_, i) => (
-                                                            <Star key={i} className="w-3 h-3 fill-current" />
-                                                        ))}
+                                    <Fragment key={product.id}>
+                                        <ScrollReveal delay={idx * 0.05}>
+                                            <Link to={`/products/${product.id}`} className="group bg-surface rounded-2xl border border-white/5 overflow-hidden hover:shadow-xl hover:shadow-accent/5 transition-all duration-300 hover:-translate-y-1">
+                                                <div className="relative aspect-square bg-background p-6 flex items-center justify-center">
+                                                    <div className="absolute top-3 left-3 bg-red-500/10 text-red-500 text-xs font-bold px-2 py-1 rounded-md">
+                                                        -12%
                                                     </div>
-                                                    <span className="text-xs text-secondary">4.9</span>
-                                                </div>
-                                                <div className="flex items-center justify-between">
-                                                    <div>
-                                                        <span className="text-xs text-secondary line-through block">Rp {(product.price * 1.12).toLocaleString('id-ID')}</span>
-                                                        <span className="text-lg font-bold text-accent">Rp {product.price.toLocaleString('id-ID')}</span>
+                                                    <img
+                                                        src={product.image}
+                                                        alt={product.name}
+                                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 rounded-2xl"
+                                                    />
+                                                    <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity translate-x-2 group-hover:translate-x-0 duration-300">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                e.stopPropagation();
+                                                                toggleWishlist(product);
+                                                            }}
+                                                            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${user?.user_metadata?.wishlist?.some(item => item.id === product.id)
+                                                                ? 'bg-red-500 text-white'
+                                                                : 'bg-white text-secondary hover:bg-red-500 hover:text-white'
+                                                                }`}
+                                                        >
+                                                            <Heart className={`w-4 h-4 ${user?.user_metadata?.wishlist?.some(item => item.id === product.id) ? 'fill-current' : ''}`} />
+                                                        </button>
                                                     </div>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            addToCart(product);
-                                                        }}
-                                                        className="p-2 rounded-lg bg-accent/10 text-accent hover:bg-accent hover:text-background transition-colors"
-                                                    >
-                                                        <ShoppingCart className="w-5 h-5" />
-                                                    </button>
                                                 </div>
-                                            </div>
-                                        </Link>
+                                                <div className="p-5">
+                                                    <h3 className="font-bold text-primary mb-1 truncate">{product.name}</h3>
+                                                    <div className="flex items-center gap-2 mb-3">
+                                                        <div className="flex text-yellow-500">
+                                                            <Star className={`w-3 h-3 ${product.rating >= 1 ? 'fill-current' : 'text-gray-600'}`} />
+                                                            <span className="text-xs font-bold ml-1">{product.rating ? product.rating.toFixed(1) : 'New'}</span>
+                                                            <span className="text-xs text-secondary ml-1">({product.reviewCount})</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <div>
+                                                            <span className="text-xs text-secondary line-through block">Rp {(product.price * 1.12).toLocaleString('id-ID')}</span>
+                                                            <span className="text-lg font-bold text-accent">Rp {product.price.toLocaleString('id-ID')}</span>
+                                                        </div>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                addToCart(product);
+                                                            }}
+                                                            className="p-2 rounded-lg bg-accent/10 text-accent hover:bg-accent hover:text-background transition-colors"
+                                                        >
+                                                            <ShoppingCart className="w-5 h-5" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </Link>
+                                        </ScrollReveal>
 
                                         {/* Insert Promo Banner after 6th item */}
                                         {idx === 5 && (
-                                            <div className="col-span-1 sm:col-span-2 lg:col-span-3 my-6">
+                                            <ScrollReveal delay={0.2} width="100%" className="col-span-1 sm:col-span-2 lg:col-span-3 my-6">
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div className="bg-gradient-to-br from-blue-600 to-blue-900 rounded-3xl p-8 relative overflow-hidden flex items-center">
+                                                    <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 rounded-3xl p-8 relative overflow-hidden flex items-center border border-white/5 group">
                                                         <div className="relative z-10 max-w-[60%]">
-                                                            <span className="text-blue-200 text-sm font-bold uppercase tracking-wider mb-2 block">Lumina GX Sale</span>
+                                                            <span className="text-blue-100 text-sm font-bold uppercase tracking-wider mb-2 block">Lumina GX Sale</span>
                                                             <h3 className="text-3xl font-bold text-white mb-4">Get 40% Off</h3>
-                                                            <button className="bg-white text-blue-900 px-6 py-2 rounded-xl font-bold hover:bg-blue-50 transition-colors">Shop Now</button>
+                                                            <button className="bg-white/10 backdrop-blur-md text-white px-6 py-2 rounded-xl font-bold hover:bg-white/20 transition-colors border border-white/10">Shop Now</button>
                                                         </div>
-                                                        <img src="https://images.unsplash.com/photo-1592434134753-a70baf7979d5?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3" alt="Promo" className="absolute right-0 bottom-0 w-1/2 h-full object-contain object-bottom transform translate-x-4 translate-y-4" />
+                                                        <img src="/lumina-gx.jpg" alt="Promo" className="absolute right-4 top-1/2 -translate-y-1/2 h-40 w-auto object-contain rounded-2xl shadow-lg border border-white/10 drop-shadow-2xl group-hover:scale-105 transition-transform duration-500" />
                                                     </div>
-                                                    <div className="bg-gradient-to-br from-purple-600 to-purple-900 rounded-3xl p-8 relative overflow-hidden flex items-center">
+                                                    <div className="bg-gradient-to-br from-slate-900 to-gray-800 rounded-3xl p-8 relative overflow-hidden flex items-center border border-white/5 group">
                                                         <div className="relative z-10 max-w-[60%]">
-                                                            <span className="text-purple-200 text-sm font-bold uppercase tracking-wider mb-2 block">Limited Time</span>
+                                                            <span className="text-secondary text-sm font-bold uppercase tracking-wider mb-2 block">Limited Time</span>
                                                             <h3 className="text-3xl font-bold text-white mb-4">New Arrivals</h3>
-                                                            <button className="bg-white text-purple-900 px-6 py-2 rounded-xl font-bold hover:bg-purple-50 transition-colors">Explore</button>
+                                                            <button className="bg-accent text-background px-6 py-2 rounded-xl font-bold hover:bg-accent/90 transition-colors">Explore</button>
                                                         </div>
-                                                        <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3" alt="Promo" className="absolute right-0 bottom-0 w-1/2 h-full object-contain object-bottom transform translate-x-4 translate-y-4" />
+                                                        <img src="/lumina-controller.jpg" alt="Promo" className="absolute right-4 top-1/2 -translate-y-1/2 h-40 w-auto object-contain rounded-2xl shadow-lg border border-white/10 drop-shadow-2xl group-hover:scale-105 transition-transform duration-500" />
                                                     </div>
                                                 </div>
-                                            </div>
+                                            </ScrollReveal>
                                         )}
-                                    </>
+                                    </Fragment>
                                 ))}
                             </div>
                         )}

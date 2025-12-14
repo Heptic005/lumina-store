@@ -1,36 +1,62 @@
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ShoppingCart, ArrowLeft, Check, Truck, Shield, Star, User } from 'lucide-react';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { ShoppingCart, ArrowLeft, Check, Truck, Shield, Star, User, Heart } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import ReviewSection from '../components/ReviewSection';
+import { useToast } from '../context/ToastContext';
 
 const ProductDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { addToCart } = useCart();
+    const { user, toggleWishlist } = useAuth();
+    const { success } = useToast(); // Moved to top level
     const [isAdded, setIsAdded] = useState(false);
     const [product, setProduct] = useState(null);
     const [relatedProducts, setRelatedProducts] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('description');
+    const [searchParams] = useSearchParams();
+    const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'description');
+
+    useEffect(() => {
+        const tab = searchParams.get('tab');
+        if (tab) {
+            setActiveTab(tab);
+        }
+    }, [searchParams]);
 
     // New State for Variants & Quantity
     const [selectedVariants, setSelectedVariants] = useState({});
     const [quantity, setQuantity] = useState(1);
     const [currentPrice, setCurrentPrice] = useState(0);
 
+    const [reviewStats, setReviewStats] = useState({ rating: 0, count: 0 });
+
     useEffect(() => {
         const fetchProductAndRelated = async () => {
             setLoading(true);
+            console.log('Fetching product with ID:', id);
             // 1. Fetch current product
             const { data: currentProduct, error: productError } = await supabase
                 .from('products')
                 .select('*')
                 .eq('id', id)
-                .single();
+                .maybeSingle();
+
+            console.log('Product fetch result:', currentProduct, 'Error:', productError);
 
             if (productError) {
                 console.error('Error fetching product:', productError);
+                setLoading(false);
+                return;
+            }
+
+            // Check if product exists
+            if (!currentProduct) {
+                console.log('Product not found');
+                setProduct(null);
                 setLoading(false);
                 return;
             }
@@ -49,7 +75,7 @@ const ProductDetail = () => {
                 setSelectedVariants(defaults);
             }
 
-            // 2. Fetch related products (same category, exclude current)
+            // 2. Fetch related products
             if (currentProduct) {
                 const { data: related, error: relatedError } = await supabase
                     .from('products')
@@ -58,10 +84,42 @@ const ProductDetail = () => {
                     .neq('id', id)
                     .limit(4);
 
-                if (!relatedError) {
-                    setRelatedProducts(related);
+                if (!relatedError && related) {
+                    // Fetch Ratings for Related
+                    const { data: relatedReviews } = await supabase
+                        .from('reviews')
+                        .select('product_id, rating')
+                        .in('product_id', related.map(r => r.id));
+
+                    const relatedWithRatings = related.map(p => {
+                        const pReviews = relatedReviews?.filter(r => r.product_id === p.id) || [];
+                        const avg = pReviews.length > 0
+                            ? pReviews.reduce((sum, r) => sum + r.rating, 0) / pReviews.length
+                            : 0;
+                        return { ...p, rating: avg, reviewCount: pReviews.length };
+                    });
+
+                    setRelatedProducts(relatedWithRatings);
                 }
             }
+
+            // 3. Fetch Review Stats
+            const { data: reviews, error: reviewsError } = await supabase
+                .from('reviews')
+                .select('rating')
+                .eq('product_id', id);
+
+            if (!reviewsError && reviews.length > 0) {
+                const totalRating = reviews.reduce((acc, curr) => acc + curr.rating, 0);
+                const avg = totalRating / reviews.length;
+                setReviewStats({
+                    rating: avg.toFixed(1),
+                    count: reviews.length
+                });
+            } else {
+                setReviewStats({ rating: 0, count: 0 });
+            }
+
             setLoading(false);
         };
 
@@ -87,8 +145,35 @@ const ProductDetail = () => {
     }
 
     if (!product) {
-        return <div className="text-center py-20">Produk tidak ditemukan</div>;
+        return (
+            <div className="min-h-[80vh] flex items-center justify-center px-4">
+                <div className="max-w-md w-full bg-[#1A1A1A] border border-white/10 rounded-3xl p-10 text-center shadow-2xl relative overflow-hidden">
+                    {/* Background glow effect */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-accent/10 blur-3xl rounded-full -z-1 pointer-events-none"></div>
+
+                    <div className="w-24 h-24 bg-white/5 border border-white/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner relative z-10">
+                        <div className="w-16 h-16 bg-background rounded-full flex items-center justify-center text-white">
+                            <ShoppingCart className="w-8 h-8 opacity-50" />
+                        </div>
+                    </div>
+
+                    <h2 className="text-3xl font-bold text-white mb-4 relative z-10">Oops!</h2>
+                    <p className="text-gray-400 mb-8 leading-relaxed relative z-10">
+                        Produk yang Anda cari tidak ditemukan. <br />Mungkin telah dihapus atau ID tidak valid.
+                    </p>
+
+                    <button
+                        onClick={() => navigate('/')}
+                        className="w-full py-4 bg-accent text-background rounded-xl font-bold hover:bg-accent/90 transition-all hover:scale-[1.02] active:scale-[0.98] relative z-10"
+                    >
+                        Kembali ke Beranda
+                    </button>
+                </div>
+            </div>
+        );
     }
+
+
 
     const handleAddToCart = () => {
         addToCart({
@@ -97,8 +182,7 @@ const ProductDetail = () => {
             selectedVariants,
             quantity
         });
-        setIsAdded(true);
-        setTimeout(() => setIsAdded(false), 2000);
+        success(`Successfully added ${product.name} to cart!`);
     };
 
     return (
@@ -132,10 +216,10 @@ const ProductDetail = () => {
                             <div className="text-3xl font-bold text-primary">
                                 Rp {currentPrice.toLocaleString('id-ID')}
                             </div>
-                            <div className="flex items-center gap-1 text-amber-400 bg-amber-500/10 px-2 py-1 rounded-lg border border-amber-500/20">
+                            <div className="flex items-center gap-1 text-amber-400 bg-amber-500/10 px-2 py-1 rounded-lg border border-amber-500/20 cursor-pointer" onClick={() => setActiveTab('reviews')}>
                                 <Star className="w-4 h-4 fill-current" />
-                                <span className="text-sm font-bold text-amber-500">4.8</span>
-                                <span className="text-xs text-amber-600/80">(120 Reviews)</span>
+                                <span className="text-sm font-bold text-amber-500">{reviewStats.rating || '0.0'}</span>
+                                <span className="text-xs text-amber-600/80">({reviewStats.count} Reviews)</span>
                             </div>
                         </div>
                     </div>
@@ -231,6 +315,16 @@ const ProductDetail = () => {
                                 </>
                             )}
                         </button>
+
+                        <button
+                            onClick={() => toggleWishlist(product)}
+                            className={`p-4 rounded-xl border transition-all ${user?.user_metadata?.wishlist?.some(item => item.id === product.id)
+                                ? 'bg-red-500/10 border-red-500 text-red-500 hover:bg-red-500/20'
+                                : 'bg-surface border-white/10 text-secondary hover:border-accent hover:text-accent'
+                                }`}
+                        >
+                            <Heart className={`w-6 h-6 ${user?.user_metadata?.wishlist?.some(item => item.id === product.id) ? 'fill-current' : ''}`} />
+                        </button>
                     </div>
 
                     {/* Features */}
@@ -274,13 +368,22 @@ const ProductDetail = () => {
                         Spesifikasi
                         {activeTab === 'specs' && <div className="absolute bottom-0 left-0 w-full h-1 bg-accent rounded-t-full"></div>}
                     </button>
+                    <button
+                        onClick={() => setActiveTab('reviews')}
+                        className={`pb-4 text-lg font-bold transition-colors relative ${activeTab === 'reviews' ? 'text-accent' : 'text-secondary hover:text-primary'}`}
+                    >
+                        Reviews
+                        {activeTab === 'reviews' && <div className="absolute bottom-0 left-0 w-full h-1 bg-accent rounded-t-full"></div>}
+                    </button>
                 </div>
 
-                {activeTab === 'description' ? (
+                {activeTab === 'description' && (
                     <div className="prose prose-invert max-w-none">
                         <p className="text-secondary leading-relaxed text-lg">{product.description}</p>
                     </div>
-                ) : (
+                )}
+
+                {activeTab === 'specs' && (
                     <div className="bg-surface rounded-2xl p-8 border border-white/5">
                         {product.specs ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12">
@@ -299,6 +402,10 @@ const ProductDetail = () => {
                             </div>
                         )}
                     </div>
+                )}
+
+                {activeTab === 'reviews' && (
+                    <ReviewSection productId={id} />
                 )}
             </div>
 
@@ -328,11 +435,10 @@ const ProductDetail = () => {
                                     <h3 className="font-bold text-primary mb-1 truncate">{related.name}</h3>
                                     <div className="flex items-center gap-2 mb-3">
                                         <div className="flex text-yellow-500">
-                                            {[...Array(5)].map((_, i) => (
-                                                <Star key={i} className="w-3 h-3 fill-current" />
-                                            ))}
+                                            <Star className={`w-3 h-3 ${related.rating >= 1 ? 'fill-current' : 'text-gray-600'}`} />
+                                            <span className="text-xs font-bold ml-1">{related.rating ? related.rating.toFixed(1) : 'New'}</span>
+                                            <span className="text-xs text-secondary ml-1">({related.reviewCount})</span>
                                         </div>
-                                        <span className="text-xs text-secondary">4.9</span>
                                     </div>
                                     <div className="flex items-center justify-between">
                                         <div>
@@ -355,6 +461,30 @@ const ProductDetail = () => {
                     </div>
                 </div>
             )}
+            {/* Sticky Add to Cart Bar for Mobile */}
+            <div className="fixed bottom-0 left-0 w-full bg-surface border-t border-white/10 p-4 md:hidden z-40 flex items-center justify-between gap-4 pb-safe">
+                <div className="flex flex-col">
+                    <span className="text-xs text-secondary">Total Price</span>
+                    <span className="text-lg font-bold text-accent">Rp {currentPrice.toLocaleString('id-ID')}</span>
+                </div>
+                <button
+                    onClick={handleAddToCart}
+                    className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${isAdded
+                        ? 'bg-green-500 text-white'
+                        : 'bg-accent text-background shadow-lg shadow-accent/20'
+                        }`}
+                >
+                    {isAdded ? (
+                        <>
+                            <Check className="w-5 h-5" /> Added
+                        </>
+                    ) : (
+                        <>
+                            <ShoppingCart className="w-5 h-5" /> Add to Cart
+                        </>
+                    )}
+                </button>
+            </div>
         </div>
     );
 };

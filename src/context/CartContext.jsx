@@ -14,7 +14,12 @@ export const CartProvider = ({ children }) => {
         localStorage.setItem('lumina_cart', JSON.stringify(cart));
     }, [cart]);
 
+    const [isAnimating, setIsAnimating] = useState(false);
+
     const addToCart = (product) => {
+        setIsAnimating(true);
+        setTimeout(() => setIsAnimating(false), 300);
+
         setCart(prev => {
             const existing = prev.find(item => item.id === product.id);
             if (existing) {
@@ -50,7 +55,8 @@ export const CartProvider = ({ children }) => {
             updateQuantity,
             clearCart,
             totalItems,
-            totalPrice
+            totalPrice,
+            isAnimating
         }}>
             {children}
         </CartContext.Provider>

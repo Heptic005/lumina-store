@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronUp, HelpCircle } from 'lucide-react';
 
 const faqs = [
@@ -76,9 +77,9 @@ const FAQ = () => {
             <div className="mt-12 text-center bg-surface rounded-2xl p-8 border border-white/5">
                 <h3 className="font-bold text-lg text-primary mb-2">Masih punya pertanyaan?</h3>
                 <p className="text-secondary mb-6">Tim support kami siap membantu Anda 24/7.</p>
-                <button className="bg-accent text-background px-6 py-2.5 rounded-full font-medium hover:bg-accent/80 transition-colors">
+                <Link to="/contact" className="bg-accent text-background px-6 py-2.5 rounded-full font-medium hover:bg-accent/80 transition-colors inline-block">
                     Hubungi Kami
-                </button>
+                </Link>
             </div>
         </div>
     );

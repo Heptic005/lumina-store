@@ -9,7 +9,7 @@ const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [showMegaMenu, setShowMegaMenu] = useState(false);
     const [activeCategory, setActiveCategory] = useState('Mobile Phones');
-    const { totalItems } = useCart();
+    const { totalItems, isAnimating } = useCart();
     const { user, logout } = useAuth();
 
     // Search State
@@ -32,12 +32,19 @@ const Navbar = () => {
     ];
 
     // Mock featured products for mega menu
-    const featuredItems = [
-        { name: 'Earpods', image: 'https://images.unsplash.com/photo-1572569028738-411a1971d629?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3' },
-        { name: 'Holder', image: 'https://images.unsplash.com/photo-1586105251261-72a756497a11?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3' },
-        { name: 'Cables', image: 'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3' },
-        { name: 'Cases & Protection', image: 'https://images.unsplash.com/photo-1603313011101-320f26a4f6f6?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3' },
-    ];
+    const [featuredItems, setFeaturedItems] = useState([]);
+
+    useEffect(() => {
+        const fetchFeatured = async () => {
+            const { data } = await supabase
+                .from('products')
+                .select('id, name, image, price')
+                .limit(4);
+
+            if (data) setFeaturedItems(data);
+        };
+        fetchFeatured();
+    }, []);
 
     // Handle Search
     useEffect(() => {
@@ -79,85 +86,131 @@ const Navbar = () => {
         <>
             <nav className={`fixed w-full z-50 transition-all duration-300 ${isOpen ? 'bg-background' : 'bg-background/80 backdrop-blur-md border-b border-white/5'}`}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between h-20 items-center">
+                    <div className="flex justify-between h-20 items-center gap-8">
                         {/* Logo */}
-                        <Link to="/" className="flex items-center gap-3 group">
-                            <div className="bg-accent p-2 rounded-xl transform group-hover:rotate-12 transition-transform duration-300">
-                                <Smartphone className="w-6 h-6 text-background fill-current" />
-                            </div>
+                        <Link to="/" className="flex items-center gap-3 group flex-shrink-0">
+                            <img src="/logo.png" alt="Lumina Logo" className="w-10 h-10 object-contain group-hover:scale-110 transition-transform duration-300" />
                             <span className="text-2xl font-bold text-primary tracking-tight">
                                 Lumina
                             </span>
                         </Link>
 
-                        {/* Desktop Menu */}
-                        <div className="hidden md:flex items-center gap-8 h-full">
-                            <Link to="/" className="text-secondary hover:text-primary font-medium transition-colors text-sm uppercase tracking-wide">Home</Link>
+                        {/* Desktop Search Bar - CENTERED */}
+                        <div className="hidden md:block flex-1 max-w-2xl relative group">
+                            <div className={`flex items-center bg-surface border rounded-full px-4 py-2.5 transition-all duration-300 ${isSearching || searchResults.length > 0 ? 'border-accent shadow-lg shadow-accent/5 ring-1 ring-accent/20' : 'border-white/10 group-hover:border-white/20'}`}>
+                                <Search className={`w-5 h-5 mr-3 transition-colors ${isSearching ? 'text-accent' : 'text-secondary'}`} />
+                                <input
+                                    type="text"
+                                    placeholder="Search for products..."
+                                    className="bg-transparent border-none focus:outline-none text-primary w-full placeholder:text-secondary/50"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    ref={searchInputRef}
+                                />
+                                {searchQuery && (
+                                    <button onClick={() => { setSearchQuery(''); setSearchResults([]); }} className="p-1 hover:bg-white/10 rounded-full text-secondary">
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                )}
+                            </div>
 
+                            {/* Search Dropdown Results */}
+                            {searchQuery && (
+                                <div className="absolute top-full left-0 w-full mt-2 bg-surface border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-fade-in-up origin-top z-50">
+                                    {isSearching ? (
+                                        <div className="p-6 text-center text-secondary">
+                                            <div className="animate-spin w-6 h-6 border-2 border-accent border-t-transparent rounded-full mx-auto mb-2"></div>
+                                            Searching...
+                                        </div>
+                                    ) : searchResults.length > 0 ? (
+                                        <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+                                            {searchResults.map((product) => (
+                                                <Link
+                                                    key={product.id}
+                                                    to={`/products/${product.id}`}
+                                                    onClick={() => { setSearchQuery(''); setSearchResults([]); }}
+                                                    className="flex items-center gap-4 p-4 hover:bg-white/5 transition-colors border-b border-white/5 last:border-0"
+                                                >
+                                                    <div className="w-12 h-12 bg-white/5 rounded-lg overflow-hidden flex-shrink-0 p-1">
+                                                        <img src={product.image} alt={product.name} className="w-full h-full object-contain" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <h4 className="font-medium text-primary truncate">{product.name}</h4>
+                                                        <p className="text-sm text-accent font-bold">Rp {product.price.toLocaleString('id-ID')}</p>
+                                                    </div>
+                                                    <div className="p-2 bg-white/5 rounded-full text-secondary opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <ChevronRight className="w-4 h-4" />
+                                                    </div>
+                                                </Link>
+                                            ))}
+                                            <Link to={`/products?search=${searchQuery}`} className="block p-3 text-center text-sm font-bold text-accent hover:bg-accent/5 transition-colors border-t border-white/5">
+                                                View all results for "{searchQuery}"
+                                            </Link>
+                                        </div>
+                                    ) : (
+                                        <div className="p-8 text-center text-secondary">
+                                            <p>No products found for "{searchQuery}"</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Desktop Menu - RIGHT */}
+                        <div className="hidden md:flex items-center gap-6 flex-shrink-0">
                             {/* Mega Menu Trigger */}
-                            <div
-                                className="h-full flex items-center group"
-                                onMouseEnter={() => setShowMegaMenu(true)}
-                                onMouseLeave={() => setShowMegaMenu(false)}
-                            >
-                                <Link to="/products" className="text-secondary group-hover:text-primary font-medium transition-colors text-sm uppercase tracking-wide py-8">
-                                    Products
-                                </Link>
+                            <div className="h-full flex items-center relative">
+                                <button
+                                    onClick={() => setShowMegaMenu(!showMegaMenu)}
+                                    className={`font-medium transition-colors text-sm uppercase tracking-wide py-2 focus:outline-none ${showMegaMenu ? 'text-primary' : 'text-secondary hover:text-primary'}`}
+                                >
+                                    Shop
+                                </button>
 
                                 {/* Mega Menu Content */}
                                 {showMegaMenu && (
-                                    <div className="absolute top-full left-0 w-full bg-surface border-t border-white/5 shadow-2xl animate-fade-in-up origin-top">
-                                        <div className="max-w-7xl mx-auto flex min-h-[400px]">
+                                    <div className="absolute top-full right-0 w-[800px] bg-surface border border-white/5 shadow-2xl rounded-2xl animate-fade-in-up origin-top-right mt-4 p-6 overflow-hidden z-[60]">
+                                        <div className="flex bg-background/50 rounded-xl overflow-hidden min-h-[300px]">
                                             {/* Sidebar */}
-                                            <div className="w-64 border-r border-white/5 py-6 bg-background/50">
-                                                {categories.map((cat) => (
-                                                    <div
+                                            <div className="w-1/3 border-r border-white/5 py-4 bg-background/50">
+                                                {categories.slice(0, 6).map((cat) => (
+                                                    <Link
                                                         key={cat.name}
-                                                        className={`px-6 py-3 flex items-center justify-between cursor-pointer transition-colors ${activeCategory === cat.name ? 'text-accent bg-accent/5 border-r-2 border-accent' : 'text-secondary hover:text-primary hover:bg-white/5'}`}
-                                                        onMouseEnter={() => setActiveCategory(cat.name)}
+                                                        to={`/products?category=${cat.name}`}
+                                                        onClick={() => setShowMegaMenu(false)}
+                                                        className="px-6 py-2.5 flex items-center gap-3 text-secondary hover:text-accent hover:bg-white/5 transition-colors"
                                                     >
-                                                        <div className="flex items-center gap-3">
-                                                            {cat.icon}
-                                                            <span className="font-medium text-sm">{cat.name}</span>
-                                                        </div>
-                                                        {activeCategory === cat.name && <ChevronRight className="w-4 h-4" />}
-                                                    </div>
+                                                        {cat.icon}
+                                                        <span className="font-medium text-sm">{cat.name}</span>
+                                                    </Link>
                                                 ))}
+                                                <Link
+                                                    to="/products"
+                                                    onClick={() => setShowMegaMenu(false)}
+                                                    className="px-6 py-2.5 flex items-center gap-3 text-accent font-bold hover:bg-white/5 transition-colors mt-2"
+                                                >
+                                                    View All Categories <ChevronRight className="w-4 h-4" />
+                                                </Link>
                                             </div>
 
-                                            {/* Content Area */}
-                                            <div className="flex-1 p-8 bg-surface">
-                                                <div className="grid grid-cols-4 gap-8">
-                                                    {/* Sub Categories List */}
-                                                    <div className="col-span-1">
-                                                        <h3 className="font-bold text-primary mb-4 text-lg">{activeCategory}</h3>
-                                                        <ul className="space-y-3">
-                                                            {categories.find(c => c.name === activeCategory)?.items.map(item => (
-                                                                <li key={item}>
-                                                                    <Link to={`/products?category=${item}`} className="text-secondary hover:text-accent text-sm transition-colors block">
-                                                                        {item}
-                                                                    </Link>
-                                                                </li>
-                                                            ))}
-                                                            <li className="pt-4">
-                                                                <Link to="/products" className="text-accent text-sm font-bold hover:underline">
-                                                                    View all
-                                                                </Link>
-                                                            </li>
-                                                        </ul>
-                                                    </div>
-
-                                                    {/* Featured Items Grid */}
-                                                    <div className="col-span-3 grid grid-cols-4 gap-6">
-                                                        {featuredItems.map((item, idx) => (
-                                                            <Link key={idx} to="/products" className="group block bg-background rounded-xl p-4 border border-white/5 hover:border-accent/30 transition-all text-center">
-                                                                <div className="aspect-square mb-4 overflow-hidden rounded-lg bg-white/5 p-2">
-                                                                    <img src={item.image} alt={item.name} className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" />
-                                                                </div>
-                                                                <p className="text-sm font-medium text-primary group-hover:text-accent transition-colors">{item.name}</p>
-                                                            </Link>
-                                                        ))}
-                                                    </div>
+                                            {/* Featured Items in Mega Menu */}
+                                            <div className="flex-1 p-6 bg-surface">
+                                                <h3 className="font-bold text-primary mb-4 text-sm uppercase tracking-wider">Featured Products</h3>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    {featuredItems.slice(0, 2).map((item) => (
+                                                        <Link
+                                                            key={item.id}
+                                                            to={`/products/${item.id}`}
+                                                            onClick={() => setShowMegaMenu(false)}
+                                                            className="group block bg-background rounded-xl p-3 border border-white/5 hover:border-accent/30 transition-all text-center"
+                                                        >
+                                                            <div className="aspect-square mb-2 overflow-hidden rounded-lg bg-white/5 p-2">
+                                                                <img src={item.image} alt={item.name} className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" />
+                                                            </div>
+                                                            <p className="text-xs font-bold text-primary truncate">{item.name}</p>
+                                                            <p className="text-xs text-accent mt-1">Rp {item.price?.toLocaleString('id-ID')}</p>
+                                                        </Link>
+                                                    ))}
                                                 </div>
                                             </div>
                                         </div>
@@ -165,24 +218,8 @@ const Navbar = () => {
                                 )}
                             </div>
 
-                            <Link to="/blog" className="text-secondary hover:text-primary font-medium transition-colors text-sm uppercase tracking-wide">Blog</Link>
-                            {user && (
-                                <Link to="/orders" className="text-secondary hover:text-primary font-medium transition-colors text-sm uppercase tracking-wide">Orders</Link>
-                            )}
-                        </div>
-
-                        {/* Icons */}
-                        <div className="hidden md:flex items-center gap-6">
-                            {/* Search Icon */}
-                            <button
-                                onClick={() => setIsSearchOpen(true)}
-                                className="p-2 hover:bg-white/5 rounded-full transition-colors group"
-                            >
-                                <Search className="w-6 h-6 text-secondary group-hover:text-primary transition-colors" />
-                            </button>
-
-                            <Link to="/cart" className="relative p-2 hover:bg-white/5 rounded-full transition-colors group">
-                                <ShoppingCart className="w-6 h-6 text-secondary group-hover:text-primary transition-colors" />
+                            <Link to="/cart" className={`relative p-2 hover:bg-white/5 rounded-full transition-all duration-300 group ${isAnimating ? 'scale-125 bg-accent/20' : ''}`}>
+                                <ShoppingCart className={`w-6 h-6 text-secondary group-hover:text-primary transition-colors ${isAnimating ? 'text-accent' : ''}`} />
                                 {totalItems > 0 && (
                                     <span className="absolute -top-1 -right-1 bg-accent text-background text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full group-hover:scale-110 transition-transform">
                                         {totalItems}
@@ -192,12 +229,14 @@ const Navbar = () => {
 
                             {user ? (
                                 <div className="flex items-center gap-4">
-                                    <span className="text-sm font-medium text-primary">
-                                        Hi, {user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'}
-                                    </span>
+                                    <Link to="/account" className="flex items-center gap-2 text-sm font-medium text-primary hover:text-accent transition-colors">
+                                        <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-accent">
+                                            <User className="w-4 h-4" />
+                                        </div>
+                                    </Link>
                                     <button
                                         onClick={logout}
-                                        className="text-sm font-medium text-secondary hover:text-red-500 transition-colors"
+                                        className="text-xs font-bold text-red-500 hover:text-red-400 uppercase tracking-wider"
                                     >
                                         Logout
                                     </button>
@@ -209,95 +248,91 @@ const Navbar = () => {
                             )}
                         </div>
 
-                        {/* Mobile Menu Button */}
-                        <button
-                            className="md:hidden p-2 text-secondary hover:text-primary transition-colors"
-                            onClick={() => setIsOpen(!isOpen)}
-                        >
-                            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-                        </button>
+                        {/* Mobile Menu Button - RIGHT */}
+                        <div className="flex md:hidden items-center gap-4">
+                            <Link to="/cart" className="relative p-2">
+                                <ShoppingCart className="w-6 h-6 text-secondary" />
+                                {totalItems > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-accent text-background text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
+                                        {totalItems}
+                                    </span>
+                                )}
+                            </Link>
+                            <button
+                                className="p-2 text-secondary hover:text-primary transition-colors"
+                                onClick={() => setIsOpen(!isOpen)}
+                            >
+                                {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                {/* Mobile Menu */}
+                {/* Mobile Menu & Search */}
                 {isOpen && (
-                    <div className="md:hidden bg-background border-t border-white/5 h-screen">
-                        <div className="px-4 pt-8 pb-4 space-y-4">
-                            <Link to="/" className="block px-4 py-3 text-lg text-secondary hover:text-primary hover:bg-white/5 rounded-xl font-medium transition-colors">Home</Link>
-                            <Link to="/products" className="block px-4 py-3 text-lg text-secondary hover:text-primary hover:bg-white/5 rounded-xl font-medium transition-colors">Products</Link>
-                            <Link to="/blog" className="block px-4 py-3 text-lg text-secondary hover:text-primary hover:bg-white/5 rounded-xl font-medium transition-colors">Blog</Link>
-                            {user && (
-                                <Link to="/orders" className="block px-4 py-3 text-lg text-secondary hover:text-primary hover:bg-white/5 rounded-xl font-medium transition-colors">Orders</Link>
+                    <div className="md:hidden bg-background border-t border-white/5 h-screen overflow-y-auto pb-20">
+                        {/* Mobile Search */}
+                        <div className="p-4 border-b border-white/5">
+                            <div className="flex items-center bg-surface border border-white/10 rounded-xl px-4 py-3">
+                                <Search className="w-5 h-5 text-secondary mr-3" />
+                                <input
+                                    type="text"
+                                    placeholder="Search products..."
+                                    className="bg-transparent border-none focus:outline-none text-primary w-full"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                            </div>
+                            {/* Mobile Search Results */}
+                            {searchResults.length > 0 && searchQuery && (
+                                <div className="mt-4 bg-surface rounded-xl border border-white/5 overflow-hidden">
+                                    {searchResults.map((product) => (
+                                        <Link
+                                            key={product.id}
+                                            to={`/products/${product.id}`}
+                                            onClick={() => setIsOpen(false)}
+                                            className="flex items-center gap-3 p-3 border-b border-white/5 last:border-0"
+                                        >
+                                            <div className="w-10 h-10 bg-white/5 rounded-lg overflow-hidden flex-shrink-0">
+                                                <img src={product.image} alt={product.name} className="w-full h-full object-contain" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-bold text-primary truncate">{product.name}</p>
+                                                <p className="text-xs text-accent">Rp {product.price.toLocaleString('id-ID')}</p>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
                             )}
-                            <Link to="/cart" className="block px-4 py-3 text-lg text-secondary hover:text-primary hover:bg-white/5 rounded-xl font-medium flex justify-between items-center transition-colors">
-                                Cart
-                                {totalItems > 0 && <span className="bg-accent text-background text-xs font-bold px-2 py-1 rounded-full">{totalItems}</span>}
-                            </Link>
+                        </div>
+
+                        <div className="px-4 py-4 space-y-2">
+                            <Link to="/" className="block px-4 py-3 text-lg text-secondary hover:text-primary hover:bg-white/5 rounded-xl font-medium transition-colors">Home</Link>
+                            <Link to="/products" className="block px-4 py-3 text-lg text-secondary hover:text-primary hover:bg-white/5 rounded-xl font-medium transition-colors">Shop All Products</Link>
+                            {/* Mobile Categories Accordion could go here */}
+
+                            {user && (
+                                <Link to="/orders" className="block px-4 py-3 text-lg text-secondary hover:text-primary hover:bg-white/5 rounded-xl font-medium transition-colors">My Orders</Link>
+                            )}
+
+                            {user?.user_metadata?.role === 'admin' && (
+                                <Link to="/admin" className="block px-4 py-3 text-lg text-accent hover:text-accent/80 hover:bg-accent/10 rounded-xl font-bold transition-colors">Admin Dashboard</Link>
+                            )}
+
                             {user ? (
                                 <button
                                     onClick={logout}
-                                    className="w-full text-left block px-4 py-3 text-lg text-red-500 hover:bg-red-500/10 rounded-xl font-medium transition-colors"
+                                    className="w-full text-left block px-4 py-3 text-lg text-red-500 hover:bg-red-500/10 rounded-xl font-medium transition-colors mt-4"
                                 >
                                     Logout ({user.email})
                                 </button>
                             ) : (
-                                <Link to="/login" className="block px-4 py-3 text-lg text-center bg-accent text-background rounded-xl font-bold mt-8 hover:bg-accent/90 transition-colors">Login</Link>
+                                <Link to="/login" className="block text-center px-4 py-3 text-lg bg-accent text-background rounded-xl font-bold mt-8 hover:bg-accent/90 transition-colors">Login / Register</Link>
                             )}
                         </div>
                     </div>
                 )}
             </nav>
-
-            {/* Search Overlay */}
-            {isSearchOpen && (
-                <div className="fixed inset-0 z-[60] bg-background/95 backdrop-blur-xl animate-fade-in">
-                    <div className="max-w-4xl mx-auto px-4 pt-24">
-                        <div className="relative">
-                            <input
-                                ref={searchInputRef}
-                                type="text"
-                                placeholder="Search for products..."
-                                className="w-full bg-transparent border-b-2 border-white/10 text-3xl md:text-5xl font-bold text-primary py-4 focus:outline-none focus:border-accent placeholder:text-white/20"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                            <button
-                                onClick={() => setIsSearchOpen(false)}
-                                className="absolute right-0 top-1/2 -translate-y-1/2 p-2 hover:bg-white/10 rounded-full transition-colors"
-                            >
-                                <X className="w-8 h-8 text-secondary hover:text-primary" />
-                            </button>
-                        </div>
-
-                        <div className="mt-12">
-                            {isSearching ? (
-                                <div className="text-secondary text-lg animate-pulse">Searching...</div>
-                            ) : searchResults.length > 0 ? (
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                                    {searchResults.map((product) => (
-                                        <Link
-                                            key={product.id}
-                                            to={`/products/${product.id}`}
-                                            onClick={() => setIsSearchOpen(false)}
-                                            className="group bg-surface rounded-xl p-4 border border-white/5 hover:border-accent/50 transition-all hover:-translate-y-1"
-                                        >
-                                            <div className="aspect-square mb-4 bg-white/5 rounded-lg overflow-hidden p-4">
-                                                <img src={product.image} alt={product.name} className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" />
-                                            </div>
-                                            <h4 className="font-bold text-primary truncate">{product.name}</h4>
-                                            <p className="text-accent text-sm mt-1">Rp {product.price.toLocaleString('id-ID')}</p>
-                                        </Link>
-                                    ))}
-                                </div>
-                            ) : searchQuery ? (
-                                <div className="text-secondary text-lg">No products found for "{searchQuery}"</div>
-                            ) : (
-                                <div className="text-secondary text-lg">Start typing to search...</div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
         </>
     );
 };

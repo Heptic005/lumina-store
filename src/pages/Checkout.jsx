@@ -9,7 +9,7 @@ import AddressMapModal from '../components/AddressMapModal';
 const Checkout = () => {
     const { cart, totalPrice, clearCart } = useCart();
     const { addOrder } = useOrder();
-    const { user } = useAuth();
+    const { user, updateProfile } = useAuth();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
@@ -17,12 +17,25 @@ const Checkout = () => {
 
     // Map Modal State
     const [isMapOpen, setIsMapOpen] = useState(false);
+    const [saveAddress, setSaveAddress] = useState(true);
     const [addressData, setAddressData] = useState({
         address: '',
         city: '',
         zipCode: '',
         coordinates: null
     });
+
+    // Pre-fill address from user profile
+    useState(() => {
+        if (user?.user_metadata) {
+            setAddressData(prev => ({
+                ...prev,
+                address: user.user_metadata.address || '',
+                city: '', // City might not be in metadata yet, or needs parsing
+                zipCode: user.user_metadata.postal_code || ''
+            }));
+        }
+    }, [user]);
 
     // Redirect if not logged in
     if (!user) {
@@ -82,6 +95,20 @@ const Checkout = () => {
             const timeoutPromise = new Promise((_, reject) =>
                 setTimeout(() => reject(new Error("Request timed out. Please check your connection.")), 10000)
             );
+
+            // Save address to profile if checked
+            if (saveAddress) {
+                try {
+                    await updateProfile({
+                        address: addressData.address || formData.get('address'),
+                        postal_code: addressData.zipCode || formData.get('zipCode'),
+                        // We could also save city/phone if we added them to metadata schema
+                    });
+                } catch (err) {
+                    console.error("Failed to save address to profile:", err);
+                    // Don't block checkout if profile update fails
+                }
+            }
 
             await Promise.race([addOrder(orderDetails), timeoutPromise]);
 
@@ -239,6 +266,21 @@ const Checkout = () => {
                                     />
                                 </div>
                             </div>
+
+                            <div className="mt-6 pt-6 border-t border-white/5">
+                                <label className="flex items-center gap-3 cursor-pointer group w-fit">
+                                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${saveAddress ? 'bg-accent border-accent' : 'border-white/20 bg-background group-hover:border-accent/50'}`}>
+                                        {saveAddress && <CheckCircle className="w-3.5 h-3.5 text-background" />}
+                                    </div>
+                                    <input
+                                        type="checkbox"
+                                        checked={saveAddress}
+                                        onChange={(e) => setSaveAddress(e.target.checked)}
+                                        className="hidden"
+                                    />
+                                    <span className="text-sm text-secondary group-hover:text-primary transition-colors">Simpan alamat ini ke profil saya</span>
+                                </label>
+                            </div>
                         </div>
 
                         {/* Payment Method */}
@@ -251,18 +293,43 @@ const Checkout = () => {
                             </div>
 
                             <div className="space-y-4">
+                                {/* Saved Payment Methods */}
+                                {user?.user_metadata?.payment_methods?.map((method) => (
+                                    <label key={method.id} className="flex items-center gap-4 p-5 border border-white/10 rounded-xl cursor-pointer hover:border-accent hover:bg-accent/5 transition-all group">
+                                        <input
+                                            type="radio"
+                                            name="payment"
+                                            value={`Saved Card ending in ${method.last4}`}
+                                            className="w-5 h-5 text-accent focus:ring-accent bg-background border-white/10"
+                                        />
+                                        <div className="flex-grow flex items-center justify-between">
+                                            <div>
+                                                <span className="font-bold text-primary block group-hover:text-accent transition-colors">
+                                                    Credit Card •••• {method.last4}
+                                                </span>
+                                                <span className="text-sm text-secondary">Expires {method.expiry}</span>
+                                            </div>
+                                            <div className="flex gap-1">
+                                                <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
+                                                <div className="w-3 h-3 rounded-full bg-yellow-500/80 -ml-1.5"></div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                ))}
+
                                 <label className="flex items-center gap-4 p-5 border border-white/10 rounded-xl cursor-pointer hover:border-accent hover:bg-accent/5 transition-all group">
-                                    <input type="radio" name="payment" value="Virtual Account" className="w-5 h-5 text-accent focus:ring-accent bg-background border-white/10" defaultChecked />
+                                    <input type="radio" name="payment" value="Virtual Account" className="w-5 h-5 text-accent focus:ring-accent bg-background border-white/10" defaultChecked={!user?.user_metadata?.payment_methods?.length} />
                                     <div className="flex-grow">
                                         <span className="font-bold text-primary block group-hover:text-accent transition-colors">Transfer Bank (Virtual Account)</span>
                                         <span className="text-sm text-secondary">BCA, Mandiri, BNI, BRI</span>
                                     </div>
                                     <CreditCard className="w-6 h-6 text-secondary group-hover:text-accent transition-colors" />
                                 </label>
+
                                 <label className="flex items-center gap-4 p-5 border border-white/10 rounded-xl cursor-pointer hover:border-accent hover:bg-accent/5 transition-all group">
                                     <input type="radio" name="payment" value="Credit Card" className="w-5 h-5 text-accent focus:ring-accent bg-background border-white/10" />
                                     <div className="flex-grow">
-                                        <span className="font-bold text-primary block group-hover:text-accent transition-colors">Kartu Kredit / Debit</span>
+                                        <span className="font-bold text-primary block group-hover:text-accent transition-colors">New Credit / Debit Card</span>
                                         <span className="text-sm text-secondary">Visa, Mastercard, JCB</span>
                                     </div>
                                     <div className="flex gap-2">
@@ -270,6 +337,7 @@ const Checkout = () => {
                                         <div className="w-8 h-5 bg-white/10 rounded"></div>
                                     </div>
                                 </label>
+
                                 <label className="flex items-center gap-4 p-5 border border-white/10 rounded-xl cursor-pointer hover:border-accent hover:bg-accent/5 transition-all group">
                                     <input type="radio" name="payment" value="COD" className="w-5 h-5 text-accent focus:ring-accent bg-background border-white/10" />
                                     <div className="flex-grow">
@@ -291,7 +359,7 @@ const Checkout = () => {
                             {cart.map(item => (
                                 <div key={item.id} className="flex gap-4 p-3 rounded-xl hover:bg-white/5 transition-colors">
                                     <div className="w-16 h-16 bg-background rounded-lg overflow-hidden border border-white/5 flex-shrink-0">
-                                        <img src={item.image} alt={item.name} className="w-full h-full object-contain p-1" />
+                                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                                     </div>
                                     <div className="flex-grow min-w-0">
                                         <h4 className="font-bold text-primary text-sm truncate">{item.name}</h4>

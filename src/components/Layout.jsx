@@ -30,7 +30,7 @@ const Layout = ({ children }) => {
                                 <li><Link to="/blog" className="hover:text-white transition-colors">Blog</Link></li>
                                 <li>Help Center</li>
                                 <li>Warranty</li>
-                                <li>Contact Us</li>
+                                <li><Link to="/contact" className="hover:text-white transition-colors">Contact Us</Link></li>
                             </ul>
                         </div>
                         <div>
