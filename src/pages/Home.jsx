@@ -168,7 +168,7 @@ const Home = () => {
                                     Explore Now
                                 </Link>
                             </div>
-                            <img src="/lumina-store/lumina-gx.jpg" alt="Phone" className="absolute right-6 top-1/2 -translate-y-1/2 h-64 w-auto object-cover rounded-2xl shadow-lg shadow-indigo-900/50 border border-white/10 group-hover:scale-105 transition-transform duration-500" />
+                            <img src={`${import.meta.env.BASE_URL}lumina-gx.jpg`} alt="Phone" className="absolute right-6 top-1/2 -translate-y-1/2 h-64 w-auto object-cover rounded-2xl shadow-lg shadow-indigo-900/50 border border-white/10 group-hover:scale-105 transition-transform duration-500" />
                         </div>
                         <div className="bg-gradient-to-br from-slate-900 to-gray-900 rounded-3xl p-8 relative overflow-hidden h-80 flex flex-col justify-center border border-white/5 group">
                             <div className="relative z-10 max-w-xs">
@@ -178,7 +178,7 @@ const Home = () => {
                                     Buy Now
                                 </Link>
                             </div>
-                            <img src="/lumina-store/lumina-console.jpg" alt="Console" className="absolute right-6 top-1/2 -translate-y-1/2 h-64 w-auto object-cover rounded-2xl shadow-lg shadow-black/50 border border-white/10 group-hover:scale-105 transition-transform duration-500" />
+                            <img src={`${import.meta.env.BASE_URL}lumina-console.jpg`} alt="Console" className="absolute right-6 top-1/2 -translate-y-1/2 h-64 w-auto object-cover rounded-2xl shadow-lg shadow-black/50 border border-white/10 group-hover:scale-105 transition-transform duration-500" />
                         </div>
                     </div>
                 </ScrollReveal>
@@ -237,7 +237,7 @@ const Home = () => {
                         </div>
                         <div className="flex-1 relative z-10 flex justify-center">
                             <div className="w-64 h-64 bg-accent/20 rounded-full absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 blur-3xl"></div>
-                            <img src="/lumina-store/lumina-watch-gt.jpg" alt="Watch" className="relative w-64 h-64 object-cover rounded-[2rem] shadow-2xl shadow-black/50 hover:scale-105 hover:rotate-2 transition-all duration-500 border-4 border-white/10" />
+                            <img src={`${import.meta.env.BASE_URL}lumina-watch-gt.jpg`} alt="Watch" className="relative w-64 h-64 object-cover rounded-[2rem] shadow-2xl shadow-black/50 hover:scale-105 hover:rotate-2 transition-all duration-500 border-4 border-white/10" />
                         </div>
                         {/* Background effect */}
                         <div className="absolute top-0 right-0 w-1/2 h-full bg-white/5 skew-x-12 transform translate-x-20 z-0 hidden md:block"></div>
