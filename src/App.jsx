@@ -30,6 +30,50 @@ import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { OrderProvider } from './context/OrderContext';
 
+// Separate component to handle location-based animation
+function AnimatedRoutes() {
+  const location = useLocation();
+
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        {/* Public Routes with Main Layout */}
+        <Route element={<Layout><PageTransition><Outlet /></PageTransition></Layout>}>
+          <Route path="/" element={<Home />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/products/:id" element={<ProductDetail />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/orders" element={<OrderHistory />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:id" element={<BlogDetail />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/account" element={<UserAccount />} />
+          <Route path="/admin-setup" element={<AdminSetup />} />
+        </Route>
+
+        {/* Admin Routes with Admin Layout */}
+        <Route path="/admin" element={
+          <AdminRoute>
+            <AdminLayout />
+          </AdminRoute>
+        }>
+          <Route index element={<Dashboard />} />
+          <Route path="products" element={<AdminProducts />} />
+          <Route path="products/new" element={<ProductForm />} />
+          <Route path="products/:id" element={<ProductForm />} />
+          <Route path="orders" element={<AdminOrders />} />
+          <Route path="orders/:id" element={<AdminOrderDetail />} />
+          <Route path="customers" element={<AdminCustomers />} />
+          <Route path="settings" element={<AdminSettings />} />
+        </Route>
+      </Routes>
+    </AnimatePresence>
+  );
+}
+
 function App() {
   return (
     <Router basename={import.meta.env.BASE_URL}>
@@ -38,42 +82,7 @@ function App() {
         <ToastProvider>
           <OrderProvider>
             <CartProvider>
-              <AnimatePresence mode="wait">
-                <Routes location={window.location} key={window.location.pathname}>
-                  {/* Public Routes with Main Layout */}
-                  <Route element={<Layout><PageTransition><Outlet /></PageTransition></Layout>}>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/products" element={<Products />} />
-                    <Route path="/products/:id" element={<ProductDetail />} />
-                    <Route path="/cart" element={<Cart />} />
-                    <Route path="/checkout" element={<Checkout />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/orders" element={<OrderHistory />} />
-                    <Route path="/faq" element={<FAQ />} />
-                    <Route path="/blog" element={<Blog />} />
-                    <Route path="/blog/:id" element={<BlogDetail />} />
-                    <Route path="/contact" element={<Contact />} />
-                    <Route path="/account" element={<UserAccount />} />
-                    <Route path="/admin-setup" element={<AdminSetup />} />
-                  </Route>
-
-                  {/* Admin Routes with Admin Layout */}
-                  <Route path="/admin" element={
-                    <AdminRoute>
-                      <AdminLayout />
-                    </AdminRoute>
-                  }>
-                    <Route index element={<Dashboard />} />
-                    <Route path="products" element={<AdminProducts />} />
-                    <Route path="products/new" element={<ProductForm />} />
-                    <Route path="products/:id" element={<ProductForm />} />
-                    <Route path="orders" element={<AdminOrders />} />
-                    <Route path="orders/:id" element={<AdminOrderDetail />} />
-                    <Route path="customers" element={<AdminCustomers />} />
-                    <Route path="settings" element={<AdminSettings />} />
-                  </Route>
-                </Routes>
-              </AnimatePresence>
+              <AnimatedRoutes />
             </CartProvider>
           </OrderProvider>
         </ToastProvider>
